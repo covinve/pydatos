@@ -7,6 +7,10 @@ import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/pyod
 const PYODIDE_URL = "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/";
 
 let listo = null;
+// Si pandas se importa antes de que pyarrow esté instalado, pandas guarda que "no hay Arrow" y luego
+// falla al escribir Parquet o al convertir desde Polars/DuckDB. En ese caso hay que empezar de cero.
+const USA_ARROW = /\b(pyarrow|polars|duckdb)\b|parquet/;
+let pandasSinArrow = false;
 
 async function iniciar() {
   const pyodide = await loadPyodide({ indexURL: PYODIDE_URL });
@@ -46,6 +50,13 @@ self.onmessage = async (evento) => {
     if (todo.includes("correr_pytest")) todo += "\nimport pytest\n";
     // pandas usa scipy para las correlaciones de Spearman y Kendall
     if (/spearman|kendall/.test(todo)) todo += "\nimport scipy\n";
+    if (USA_ARROW.test(todo)) {
+      if (pandasSinArrow) {
+        self.postMessage({ id, estado: "reiniciar" });
+        return;
+      }
+      todo += "\nimport pyarrow\n";
+    }
     await pyodide.loadPackagesFromImports(todo, {
       messageCallback: (texto) => {
         const paquete = /Loading (.+)/.exec(texto);
@@ -53,6 +64,7 @@ self.onmessage = async (evento) => {
       },
       errorCallback: () => {},
     });
+    if (pyodide.loadedPackages.pandas && !pyodide.loadedPackages.pyarrow) pandasSinArrow = true;
     if (tipo === "preparar") {
       self.postMessage({ id, estado: "listo", resultado: {} });
       return;

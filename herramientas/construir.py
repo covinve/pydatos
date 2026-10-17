@@ -13,9 +13,11 @@ Estructura que lee:
 
 from __future__ import annotations
 
+import ast
 import json
 import re
 import sys
+import time
 from datetime import date
 from pathlib import Path
 
@@ -26,6 +28,8 @@ DATOS = CONTENIDO / "datos"
 NIVELES = {"basico", "intermedio", "avanzado"}
 DIFICULTADES = {"basico", "medio", "avanzado", "reto"}
 TIPOS = {"web", "local"}
+# Nombres que el evaluador agrega al espacio de las pruebas: el código del estudiante no debe usarlos
+NOMBRES_DE_PRUEBAS = {"codigo", "salida", "igual", "cerca", "igual_df", "capturar", "lanza", "correr_pytest", "requiere"}
 
 
 class ErrorContenido(Exception):
@@ -113,6 +117,90 @@ def numero_archivo(ruta: Path) -> int:
     return int(re.search(r"\d+", ruta.stem).group())
 
 
+def _armar_reto(titulo: str, cuerpo: str, ruta: Path | str) -> dict:
+    nombre = f"{ruta}: reto «{titulo}»"
+    if not titulo:
+        raise ErrorContenido(f"{ruta}: cada :::reto necesita un título en la misma línea")
+    bloques: dict[str, list[str]] = {}
+    for m in re.finditer(r"^```(pyreto|pyprueba|pysolucion|pypreparacion)[ \t]*\n(.*?)^```[ \t]*$", cuerpo, re.S | re.M):
+        bloques.setdefault(m.group(1), []).append(m.group(2).rstrip("\n") + "\n")
+    for clase in ("pyreto", "pyprueba", "pysolucion"):
+        if len(bloques.get(clase, [])) != 1:
+            raise ErrorContenido(f"{nombre} debe tener exactamente un bloque ```{clase}")
+    if len(bloques.get("pypreparacion", [])) > 1:
+        raise ErrorContenido(f"{nombre} tiene más de un bloque ```pypreparacion")
+    pista = re.search(r"^:::pista[^\n]*\n(.*?)^:::[ \t]*$", cuerpo, re.S | re.M)
+    enunciado = re.sub(r"^```(pyreto|pyprueba|pysolucion|pypreparacion).*?^```[ \t]*$", "", cuerpo, flags=re.S | re.M)
+    enunciado = re.sub(r"^:::pista.*?^:::[ \t]*$", "", enunciado, flags=re.S | re.M).strip()
+    if not enunciado:
+        raise ErrorContenido(f"{nombre} no tiene enunciado")
+    if "def prueba_" not in bloques["pyprueba"][0]:
+        raise ErrorContenido(f"{nombre}: el bloque ```pyprueba no tiene funciones prueba_*")
+    try:
+        arbol = ast.parse(bloques["pysolucion"][0])
+    except SyntaxError as error:
+        raise ErrorContenido(f"{nombre}: la solución tiene un error de sintaxis: {error}") from None
+    definidos = {n.id for n in ast.walk(arbol) if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Store)}
+    definidos |= {n.name for n in arbol.body if isinstance(n, (ast.FunctionDef, ast.ClassDef))}
+    choques = sorted(definidos & NOMBRES_DE_PRUEBAS)
+    if choques:
+        raise ErrorContenido(f"{nombre}: la solución usa {choques}, que las pruebas reservan para sí")
+    return {
+        "titulo": titulo,
+        "enunciado": enunciado,
+        "inicial": bloques["pyreto"][0],
+        "pruebas": bloques["pyprueba"][0],
+        "solucion": bloques["pysolucion"][0],
+        "preparacion": bloques.get("pypreparacion", [""])[0],
+        "pista": pista.group(1).strip() if pista else "",
+    }
+
+
+def extraer_retos(texto: str, ruta: Path | str = "") -> list[dict]:
+    """Lee los bloques :::reto de una lección. También lo usa herramientas/validar.py.
+
+    Formato (la pista y la preparación son opcionales):
+        :::reto Título
+        Enunciado en Markdown.
+        ```pyreto        código inicial que ve el estudiante
+        ```pyprueba      funciones prueba_* (ocultas)
+        ```pysolucion    solución de referencia
+        ```pypreparacion código oculto que corre antes (por ejemplo, borrar archivos de una ejecución anterior)
+        :::pista
+        Texto de la pista.
+        :::
+        :::
+    """
+    retos = []
+    abiertos: list[str] = []
+    reto = None
+    en_codigo = False
+    for linea in texto.splitlines():
+        if re.match(r"^\s*(```|~~~)", linea):
+            en_codigo = not en_codigo
+        apertura = not en_codigo and re.match(r"^:::(\w+)\s*(.*)$", linea)
+        cierre = not en_codigo and re.match(r"^:::\s*$", linea)
+        if apertura:
+            abiertos.append(apertura.group(1))
+            if apertura.group(1) == "reto":
+                if reto is not None:
+                    raise ErrorContenido(f"{ruta}: hay un :::reto dentro de otro")
+                reto = {"titulo": apertura.group(2).strip(), "lineas": [], "nivel": len(abiertos)}
+                continue
+        elif cierre and abiertos:
+            if reto is not None and len(abiertos) == reto["nivel"]:
+                retos.append(_armar_reto(reto["titulo"], "\n".join(reto["lineas"]), ruta))
+                reto = None
+                abiertos.pop()
+                continue
+            abiertos.pop()
+        if reto is not None:
+            reto["lineas"].append(linea)
+    if reto is not None:
+        raise ErrorContenido(f"{ruta}: al reto «{reto['titulo']}» le falta el ::: de cierre")
+    return retos
+
+
 # ---------------------------------------------------------------------------
 # Elementos del curso
 # ---------------------------------------------------------------------------
@@ -131,6 +219,7 @@ def leer_leccion(ruta: Path, modulo_id: str) -> dict:
         "minutos": meta["minutos"],
         "resumen": meta.get("resumen", ""),
         "contenido": contenido,
+        "retos": len(extraer_retos(contenido, ruta)),
         "quiz": quiz,
     }
 
@@ -256,11 +345,21 @@ def main() -> int:
         print(f"❌ {error}")
         return 1
     destino = CONTENIDO / "curso.json"
-    destino.write_text(json.dumps(curso, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    texto = json.dumps(curso, ensure_ascii=False, separators=(",", ":"))
+    for intento in range(5):
+        try:
+            destino.write_text(texto, encoding="utf-8")
+            break
+        except OSError:
+            # En Windows, el servidor local puede tener el archivo abierto un instante mientras lo envía
+            if intento == 4:
+                raise
+            time.sleep(0.5)
     lecciones = sum(len(m["lecciones"]) for m in curso["modulos"])
     ejercicios = sum(len(m["ejercicios"]) for m in curso["modulos"])
+    retos = sum(l["retos"] for m in curso["modulos"] for l in m["lecciones"])
     print(
-        f"✅ curso.json: {len(curso['modulos'])} módulos, {lecciones} lecciones, "
+        f"✅ curso.json: {len(curso['modulos'])} módulos, {lecciones} lecciones, {retos} retos, "
         f"{ejercicios} ejercicios, {len(curso['proyectos'])} proyectos ({destino.stat().st_size / 1024:.0f} KB)"
     )
     return 0

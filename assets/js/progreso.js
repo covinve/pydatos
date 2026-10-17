@@ -8,7 +8,7 @@ const Progreso = (() => {
   const oyentes = new Set();
 
   function vacio() {
-    return { version: 1, lecciones: {}, ejercicios: {}, proyectos: {}, actividad: [], ultimo: null, actualizado: null };
+    return { version: 1, lecciones: {}, ejercicios: {}, retos: {}, proyectos: {}, actividad: [], ultimo: null, actualizado: null };
   }
 
   function cargar() {
@@ -99,6 +99,32 @@ const Progreso = (() => {
     return actualizarEjercicio(id, { intentos: 0, codigo: null, reintento: true, estado: e.estado === "resuelto" ? "resuelto" : e.estado }, false);
   }
 
+  // --- Retos de las lecciones ----------------------------------------------------
+
+  function reto(id) {
+    return datos.retos[id] || { resuelto: false, fallos: 0 };
+  }
+
+  function guardarCodigoReto(id, codigo) {
+    datos.retos[id] = { ...reto(id), codigo };
+    guardar();
+  }
+
+  function retoFallido(id) {
+    const r = reto(id);
+    datos.retos[id] = { ...r, fallos: (r.fallos || 0) + 1 };
+    registrarActividad();
+    guardar();
+    return datos.retos[id];
+  }
+
+  function retoResuelto(id) {
+    datos.retos[id] = { ...reto(id), resuelto: true, fecha: reto(id).fecha || hoy() };
+    registrarActividad();
+    guardar();
+    return datos.retos[id];
+  }
+
   // --- Proyectos -------------------------------------------------------------
 
   function proyecto(id) {
@@ -168,6 +194,11 @@ const Progreso = (() => {
       if (!mio || (rango[e.estado] || 0) > (rango[mio.estado] || 0)) datos.ejercicios[id] = e;
       else if (mio && !mio.codigo && e.codigo) mio.codigo = e.codigo;
     }
+    for (const [id, r] of Object.entries(otro.retos || {})) {
+      const mio = datos.retos[id];
+      if (!mio) datos.retos[id] = r;
+      else datos.retos[id] = { ...r, ...mio, resuelto: mio.resuelto || r.resuelto, fallos: Math.max(mio.fallos || 0, r.fallos || 0), codigo: mio.codigo ?? r.codigo };
+    }
     for (const [id, p] of Object.entries(otro.proyectos || {})) {
       const mio = datos.proyectos[id];
       datos.proyectos[id] = mio ? { ...p, ...mio, criterios: { ...p.criterios, ...mio.criterios } } : p;
@@ -194,6 +225,10 @@ const Progreso = (() => {
     intentoFallido,
     resuelto,
     reiniciarEjercicio,
+    reto,
+    guardarCodigoReto,
+    retoFallido,
+    retoResuelto,
     proyecto,
     marcarCriterio,
     estadoProyecto,

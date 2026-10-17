@@ -18,7 +18,7 @@ const Py = (() => {
 
   function crearWorker() {
     // La versión en la URL evita que el navegador use un worker viejo después de actualizar el sitio.
-    worker = new Worker("assets/js/worker.js?v=2026-10-17d", { type: "module" });
+    worker = new Worker("assets/js/worker.js?v=2026-10-17f", { type: "module" });
     worker.onmessage = (evento) => {
       const mensaje = evento.data;
       if (!actual || mensaje.id !== actual.id) return;
@@ -29,6 +29,15 @@ const Py = (() => {
         avisar("listo");
         actual.alAvanzar && actual.alAvanzar("Ejecutando…");
         iniciarTemporizador();
+      } else if (mensaje.estado === "reiniciar") {
+        // El worker necesita empezar de cero (ver worker.js): se repite la misma tarea en uno nuevo
+        worker.terminate();
+        worker = null;
+        avisar("apagado");
+        actual.alAvanzar && actual.alAvanzar("Reiniciando Python…");
+        cola.unshift(actual);
+        actual = null;
+        procesar();
       } else if (mensaje.estado === "listo") {
         avisar("listo");
         terminar({ ok: true, ...mensaje.resultado });

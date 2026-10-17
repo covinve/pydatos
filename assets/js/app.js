@@ -113,6 +113,12 @@ const App = (() => {
     };
   }
 
+  function retosResueltos(l) {
+    let resueltos = 0;
+    for (let i = 1; i <= (l.retos || 0); i++) if (Progreso.reto(`${l.id}-r${i}`).resuelto) resueltos++;
+    return resueltos;
+  }
+
   function progresoNivel(nivel) {
     const modulos = curso.modulos.filter((m) => m.nivel === nivel);
     let total = 0;
@@ -345,10 +351,11 @@ const App = (() => {
     m.lecciones.forEach((l, i) => {
       const hecha = Progreso.leccion(l.id)?.completada;
       const quiz = Progreso.leccion(l.id)?.quiz;
+      const retos = retosResueltos(l);
       html += `<a class="fila ${hecha ? "fila-hecha" : ""}" href="#/leccion/${l.id}">
         <span class="fila-numero">${hecha ? "✓" : i + 1}</span>
         <span class="fila-texto"><b>${esc(l.titulo)}</b>${l.resumen ? `<small>${esc(l.resumen)}</small>` : ""}</span>
-        <span class="fila-meta">${quiz ? `<span class="chip">🧠 ${quiz.aciertos}/${quiz.total}</span>` : ""}<span class="chip">⏱️ ${l.minutos} min</span></span></a>`;
+        <span class="fila-meta">${l.retos ? `<span class="chip ${retos === l.retos ? "chip-ok" : ""}" title="Retos resueltos">🎯 ${retos}/${l.retos}</span>` : ""}${quiz ? `<span class="chip">🧠 ${quiz.aciertos}/${quiz.total}</span>` : ""}<span class="chip">⏱️ ${l.minutos} min</span></span></a>`;
     });
     html += `</div><h2 class="titulo-seccion">Ejercicios</h2>`;
     if (m.nivel === "basico") html += `<p class="texto-suave">En el nivel básico los ejercicios van de menos a más: cada uno exige un poco más que el anterior.</p>`;
@@ -384,7 +391,7 @@ const App = (() => {
     c.classList.add("vista-lectura");
     let html = `${migas([{ texto: "Inicio", href: "#/" }, { texto: `Módulo ${m.numero}: ${m.titulo}`, href: `#/modulo/${m.id}` }, { texto: `Lección ${l.posicion + 1}` }])}
       <header class="cabecera-leccion ${nivel.clase}">
-        <div class="cabecera-etiqueta">Lección ${l.posicion + 1} de ${m.lecciones.length} · ⏱️ ${l.minutos} min</div>
+        <div class="cabecera-etiqueta">Lección ${l.posicion + 1} de ${m.lecciones.length} · ⏱️ ${l.minutos} min${l.retos ? ` · 🎯 ${l.retos} ${l.retos === 1 ? "reto" : "retos"} para practicar` : ""}</div>
         <h1>${esc(l.titulo)}</h1>
         <div class="barra barra-fina"><div class="barra-valor" style="width:${((l.posicion + 1) / m.lecciones.length) * 100}%"></div></div>
       </header>
@@ -406,7 +413,7 @@ const App = (() => {
       ${siguiente ? `<a class="boton boton-primario" href="#/leccion/${siguiente.id}">${esc(siguiente.titulo)} →</a>` : primerEjercicio ? `<a class="boton boton-primario" href="#/ejercicio/${primerEjercicio.id}">Ir a los ejercicios →</a>` : ""}
     </nav>`;
     c.innerHTML = html;
-    Md.activar(c);
+    Md.activar(c, { leccion: l.id });
 
     const marcar = $("#marcar-leida", c);
     if (marcar) {

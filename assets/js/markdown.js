@@ -6,6 +6,9 @@
  *   :::pasos [título]  con hijos :::paso [título]   (diagrama paso a paso)
  *   ```pyrun     bloque de código editable y ejecutable
  *   ```pytrace   visualizador: muestra cómo cambian las variables línea a línea
+ *   :::reto Título   mini ejercicio dentro de la lección, con ```pyreto (código inicial),
+ *                    ```pyprueba (pruebas ocultas), ```pysolucion y, opcionales, :::pista
+ *                    y ```pypreparacion (código oculto que corre antes del del estudiante)
  */
 
 const Md = (() => {
@@ -19,8 +22,8 @@ const Md = (() => {
     telco: { icono: "📡", titulo: "En facturación telco" },
     capo: { icono: "🧠", titulo: "Bajo el capó" },
     nota: { icono: "📝", titulo: "Nota" },
-    reto: { icono: "🎯", titulo: "Pruébalo tú" },
   };
+  const FALLOS_PARA_SOLUCION = 2;
 
   function escapar(texto) {
     return texto.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -80,6 +83,8 @@ const Md = (() => {
         return `<div class="columnas">${interior}</div>`;
       case "columna":
         return `<div class="columna">${titulo ? `<div class="columna-titulo">${titulo}</div>` : ""}${interior}</div>`;
+      case "reto":
+        return `<section class="reto" data-titulo="${escapar(nodo.titulo)}">${interior}</section>`;
       default:
         return `<div class="bloque-${nodo.tipo}">${interior}</div>`;
     }
@@ -93,7 +98,11 @@ const Md = (() => {
   // Activación de elementos interactivos
   // -------------------------------------------------------------------------
 
-  function activar(contenedor) {
+  /** Activa los elementos interactivos. `opciones.leccion` da identidad a los retos para guardar el progreso. */
+  function activar(contenedor, opciones = {}) {
+    contenedor.querySelectorAll("section.reto").forEach((seccion, i) => {
+      crearReto(seccion, opciones.leccion ? `${opciones.leccion}-r${i + 1}` : null);
+    });
     contenedor.querySelectorAll("pre code").forEach((bloque) => {
       const clase = [...bloque.classList].find((c) => c.startsWith("language-")) || "";
       const lenguaje = clase.replace("language-", "");
@@ -219,6 +228,156 @@ const Md = (() => {
       editor.setValue(codigo);
       panel.hidden = true;
     });
+    Py.precalentar();
+  }
+
+  /** Mini ejercicio dentro de la lección: se escribe, se comprueba y, si hace falta, se abre la pista o la solución. */
+  function crearReto(seccion, id) {
+    const extraer = (lenguaje) => {
+      const bloque = seccion.querySelector(`pre > code.language-${lenguaje}`);
+      if (!bloque) return "";
+      bloque.closest("pre").remove();
+      return bloque.textContent.replace(/\n$/, "");
+    };
+    const inicial = extraer("pyreto");
+    const pruebas = extraer("pyprueba");
+    const solucion = extraer("pysolucion");
+    const preparacion = extraer("pypreparacion");
+    const bloquePista = seccion.querySelector(":scope > .bloque-pista");
+    const pista = bloquePista ? bloquePista.innerHTML : "";
+    if (bloquePista) bloquePista.remove();
+
+    const enunciado = document.createElement("div");
+    enunciado.className = "reto-enunciado";
+    enunciado.append(...seccion.childNodes);
+    seccion.innerHTML = `
+      <div class="reto-cabecera">
+        <span class="reto-icono">🎯</span>
+        <span class="reto-titulo"><small>Pruébalo tú</small>${marked.parseInline(seccion.dataset.titulo || "")}</span>
+        <span class="reto-insignia"></span>
+      </div>`;
+    seccion.appendChild(enunciado);
+    seccion.insertAdjacentHTML("beforeend", `
+      <div class="editor-caja reto-editor">
+        <div class="editor-barra">
+          <span class="ejecutable-etiqueta">Python · tu turno</span>
+          <span class="ejecutable-estado"></span>
+        </div>
+        <div class="reto-codigo"></div>
+        <div class="editor-acciones">
+          <button type="button" class="boton boton-chico boton-fantasma" data-accion="reiniciar" title="Volver al código inicial">↺ Reiniciar</button>
+          <span class="espaciador"></span>
+          <button type="button" class="boton boton-chico" data-accion="ejecutar" title="Ctrl + Enter · solo muestra lo que imprime">▶ Ejecutar</button>
+          <button type="button" class="boton boton-chico boton-primario" data-accion="comprobar">✔ Comprobar</button>
+        </div>
+      </div>
+      <div class="reto-resultado" hidden></div>
+      <div class="reto-ayudas"></div>`);
+
+    let sinGuardar = { resuelto: false, fallos: 0 };
+    const estado = () => (id ? Progreso.reto(id) : sinGuardar);
+    const registrar = (ok) => {
+      if (id) return ok ? Progreso.retoResuelto(id) : Progreso.retoFallido(id);
+      sinGuardar = ok ? { ...sinGuardar, resuelto: true } : { ...sinGuardar, fallos: sinGuardar.fallos + 1 };
+      return sinGuardar;
+    };
+    const estadoEl = seccion.querySelector(".ejecutable-estado");
+    const resultadoEl = seccion.querySelector(".reto-resultado");
+    const ayudas = seccion.querySelector(".reto-ayudas");
+    const insignia = seccion.querySelector(".reto-insignia");
+    const botones = [...seccion.querySelectorAll(".editor-acciones .boton")];
+
+    function pintarAyudas() {
+      const e = estado();
+      const verSolucion = e.resuelto || e.fallos >= FALLOS_PARA_SOLUCION;
+      const verPista = pista && (e.resuelto || e.fallos >= 1);
+      let html = "";
+      if (verPista) {
+        html += `<details class="ayuda" ${verSolucion ? "" : "open"}><summary>💡 Pista</summary><div class="contenido">${pista}</div></details>`;
+      }
+      if (verSolucion) {
+        html += `<details class="ayuda ayuda-solucion"><summary>📘 Solución</summary><div class="contenido"><pre><code class="language-python">${escapar(solucion)}</code></pre></div></details>`;
+      }
+      ayudas.innerHTML = html;
+      ayudas.querySelectorAll("pre code").forEach((b) => hljs.highlightElement(b));
+      insignia.innerHTML = e.resuelto ? '<span class="chip chip-ok">✅ Resuelto</span>' : "";
+    }
+
+    function pintarComprobacion(resultado) {
+      resultadoEl.hidden = false;
+      if (!resultado.ok) {
+        resultadoEl.innerHTML = `<div class="salida-error"><pre>${escapar(resultado.error)}</pre></div>`;
+        return;
+      }
+      if (resultado.sintaxis) {
+        resultadoEl.innerHTML = `<div class="resultado-cabecera resultado-aviso">✏️ Hay un error de sintaxis. <small>No cuenta como intento: corrígelo y vuelve a comprobar.</small></div><div class="salida-error"><pre>${escapar(resultado.error)}</pre></div>`;
+        return;
+      }
+      const lista = resultado.pruebas || [];
+      const ok = !resultado.error && lista.length > 0 && lista.every((p) => p.ok);
+      const yaResuelto = estado().resuelto;
+      const e = registrar(ok);
+      let html;
+      if (ok) {
+        html = `<div class="resultado-cabecera resultado-ok">🎉 ¡Reto superado! <small>Abajo puedes comparar tu código con la solución.</small></div>`;
+      } else {
+        const pasadas = lista.filter((p) => p.ok).length;
+        const ayuda = yaResuelto
+          ? "Ya lo habías resuelto antes; esta versión no pasa todas las comprobaciones."
+          : e.fallos >= FALLOS_PARA_SOLUCION
+            ? "Ya puedes ver la solución abajo. Léela, cierra y vuelve a escribirlo tú."
+            : pista
+              ? "Se desbloqueó una pista abajo."
+              : "Lee el mensaje y vuelve a intentarlo.";
+        html = `<div class="resultado-cabecera resultado-fallo">${lista.length ? `${pasadas} de ${lista.length} comprobaciones pasaron.` : "Tu código lanzó un error."} <small>${ayuda}</small></div>`;
+      }
+      if (resultado.error) html += `<div class="salida-error"><strong>Error al ejecutar tu código</strong><pre>${escapar(resultado.error)}</pre></div>`;
+      if (lista.length) {
+        html += `<ul class="pruebas">${lista
+          .map((p) => `<li class="${p.ok ? "prueba-ok" : "prueba-fallo"}"><span class="prueba-icono">${p.ok ? "✓" : "✗"}</span><div><b>${escapar(p.nombre)}</b>${p.mensaje ? `<pre>${escapar(p.mensaje)}</pre>` : ""}</div></li>`)
+          .join("")}</ul>`;
+      }
+      if (resultado.salida) html += `<details class="salida-detalle" ${ok ? "" : "open"}><summary>Lo que imprimió tu código</summary><pre class="salida-texto">${escapar(resultado.salida)}</pre></details>`;
+      resultadoEl.innerHTML = html;
+      pintarAyudas();
+    }
+
+    async function correr(modo) {
+      botones.forEach((b) => (b.disabled = true));
+      estadoEl.textContent = "Preparando…";
+      const resultado = await Py.ejecutar({
+        tipo: modo,
+        codigo: editor.getValue(),
+        pruebas,
+        preparacion,
+        archivos: ARCHIVOS_LECCION,
+        alAvanzar: (t) => (estadoEl.textContent = t),
+      });
+      estadoEl.textContent = "";
+      botones.forEach((b) => (b.disabled = false));
+      if (id) Progreso.guardarCodigoReto(id, editor.getValue());
+      if (modo === "probar") return pintarComprobacion(resultado);
+      resultadoEl.hidden = false;
+      resultadoEl.innerHTML = '<div class="ejecutable-salida"></div>';
+      pintarResultado(resultadoEl.firstChild, resultado);
+    }
+
+    const guardado = id ? estado().codigo : null;
+    const editor = crearEditor(seccion.querySelector(".reto-codigo"), guardado ?? inicial, { alEjecutar: () => correr("ejecutar") });
+    let temporizador = null;
+    editor.on("change", () => {
+      if (!id) return;
+      clearTimeout(temporizador);
+      temporizador = setTimeout(() => Progreso.guardarCodigoReto(id, editor.getValue()), 600);
+    });
+    seccion.querySelector('[data-accion="ejecutar"]').addEventListener("click", () => correr("ejecutar"));
+    seccion.querySelector('[data-accion="comprobar"]').addEventListener("click", () => correr("probar"));
+    seccion.querySelector('[data-accion="reiniciar"]').addEventListener("click", () => {
+      if (editor.getValue() !== inicial && !confirm("¿Volver al código inicial? Perderás lo que escribiste.")) return;
+      editor.setValue(inicial);
+      resultadoEl.hidden = true;
+    });
+    pintarAyudas();
     Py.precalentar();
   }
 

@@ -1,6 +1,6 @@
 """Valida que los ejercicios del curso estén bien construidos.
 
-Para cada ejercicio de la página comprueba que:
+Para cada ejercicio de la página y cada reto de las lecciones comprueba que:
   - la solución oficial pasa todas las pruebas, y
   - el código inicial NO las pasa (si las pasara, el ejercicio no enseñaría nada).
 También ejecuta los bloques `pyrun` de las lecciones y avisa si alguno falla.
@@ -9,6 +9,7 @@ Uso:
     python herramientas/construir.py
     python herramientas/validar.py            # todo el curso
     python herramientas/validar.py m05        # solo un módulo
+    python herramientas/validar.py m05 --retos   # solo los retos de las lecciones
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "assets" / "py"))
 
 import evaluador  # noqa: E402
+from construir import extraer_retos  # noqa: E402
 
 ARCHIVOS_LECCION = ["muestra/cdr.csv", "muestra/clientes.csv", "muestra/planes.csv", "muestra/facturas.csv"]
 
@@ -125,22 +127,34 @@ def bloques_pyrun(texto: str) -> list[str]:
 
 
 def main() -> int:
-    filtro = sys.argv[1] if len(sys.argv) > 1 else ""
+    argumentos = [a for a in sys.argv[1:] if not a.startswith("--")]
+    solo_retos = "--retos" in sys.argv
+    filtro = argumentos[0] if argumentos else ""
     curso = json.loads((RAIZ / "contenido" / "curso.json").read_text(encoding="utf-8"))
     fallos = 0
     avisos = 0
     total = 0
+    retos = 0
+    retos_fallidos = 0
     for modulo in curso["modulos"]:
         if filtro and not modulo["id"].startswith(filtro):
             continue
         print(f"\n== Módulo {modulo['numero']}: {modulo['titulo']}")
         for leccion in modulo["lecciones"]:
-            for i, bloque in enumerate(bloques_pyrun(leccion["contenido"]), 1):
+            for i, bloque in enumerate([] if solo_retos else bloques_pyrun(leccion["contenido"]), 1):
                 resultado = correr(bloque, {"archivos": ARCHIVOS_LECCION}, "ejecutar")
                 if resultado["error"] and "# error esperado" not in bloque:
                     avisos += 1
                     print(f"  ⚠ {leccion['id']} bloque {i}: {resultado['error']}")
-        for ejercicio in modulo["ejercicios"]:
+            for i, reto in enumerate(extraer_retos(leccion["contenido"], leccion["id"]), 1):
+                retos += 1
+                problemas = validar_ejercicio({**reto, "archivos": ARCHIVOS_LECCION})
+                if problemas:
+                    retos_fallidos += 1
+                    print(f"  ❌ {leccion['id']}-r{i} · {reto['titulo']}")
+                    for p in problemas:
+                        print(f"       - {p}")
+        for ejercicio in [] if solo_retos else modulo["ejercicios"]:
             if ejercicio["tipo"] == "web":
                 problemas = validar_ejercicio(ejercicio)
             else:
@@ -156,8 +170,8 @@ def main() -> int:
                     print(f"       - {p}")
             else:
                 print(f"  ✅ {ejercicio['id']} · {ejercicio['titulo']}")
-    print(f"\n{total - fallos}/{total} ejercicios correctos · {avisos} avisos en lecciones")
-    return 1 if fallos else 0
+    print(f"\n{total - fallos}/{total} ejercicios correctos · {retos - retos_fallidos}/{retos} retos correctos · {avisos} avisos en lecciones")
+    return 1 if fallos or retos_fallidos else 0
 
 
 if __name__ == "__main__":
