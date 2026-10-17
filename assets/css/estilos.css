@@ -205,7 +205,7 @@ img { max-width: 100%; }
   border-right: 1px solid var(--borde); background: var(--superficie);
   scrollbar-width: thin;
 }
-.vista { flex: 1; min-width: 0; padding: 28px 40px 80px; max-width: 1180px; margin: 0 auto; }
+.vista { flex: 1; min-width: 0; padding: 28px 40px 80px; max-width: 1180px; margin: 0; }
 .vista-lectura { max-width: 900px; }
 .vista-ejercicio { max-width: 1500px; }
 .velo { display: none; }

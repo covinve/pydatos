@@ -18,7 +18,7 @@ const Py = (() => {
 
   function crearWorker() {
     // La versión en la URL evita que el navegador use un worker viejo después de actualizar el sitio.
-    worker = new Worker("assets/js/worker.js?v=2026-10-17b", { type: "module" });
+    worker = new Worker("assets/js/worker.js?v=2026-10-17c", { type: "module" });
     worker.onmessage = (evento) => {
       const mensaje = evento.data;
       if (!actual || mensaje.id !== actual.id) return;
