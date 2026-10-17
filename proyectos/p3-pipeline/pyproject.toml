@@ -1,0 +1,41 @@
+[project]
+name = "telco-pipeline"
+version = "1.0.0"
+description = "Pipeline de facturación telco de punta a punta (Proyecto 3 del curso PyDatos)"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "duckdb>=1.1",
+    "pandas>=2.2",
+    "pyarrow>=18",
+    "matplotlib>=3.8",
+    "scikit-learn>=1.6",
+    "typer>=0.12",
+    "pydantic-settings>=2.4",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6", "mypy>=1.10", "pandas-stubs"]
+
+[project.scripts]
+telco = "telco_pipeline.cli:app"
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 125
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

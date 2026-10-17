@@ -1,0 +1,9 @@
+# Configuración del pipeline (sin secretos: este archivo va a Git).
+# Cualquier valor se puede cambiar con una variable TELCO_<CAMPO> o con opciones de la CLI.
+datos = "datos/10MB"
+salidas = "salidas"
+periodo = "202609"
+memoria_duckdb = "4GB"
+hilos = 4
+umbral_rechazo = 5.0
+top_anomalias = 20

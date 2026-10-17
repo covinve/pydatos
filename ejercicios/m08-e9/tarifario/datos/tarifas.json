@@ -1,0 +1,4 @@
+{
+  "vigente_desde": "2026-01-01",
+  "tarifas": {"LOCAL": 100, "NACIONAL": 120, "INTERNACIONAL": 950}
+}

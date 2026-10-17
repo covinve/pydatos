@@ -1,0 +1,32 @@
+# Librerías del curso PyDatos. Instálalas dentro de tu entorno virtual:
+#   python -m pip install -r requirements.txt
+
+# Datos
+numpy>=2.2
+pandas>=2.2
+pyarrow>=18
+polars>=1.18
+duckdb>=1.1
+
+# Visualización y ciencia de datos
+matplotlib>=3.8
+seaborn>=0.13
+scikit-learn>=1.6
+
+# Notebooks en VS Code
+ipykernel>=6.29
+
+# Calidad de código y pruebas
+pytest>=8.0
+pytest-cov>=5.0
+ruff>=0.6
+mypy>=1.10
+
+# Automatización, APIs, bases de datos y configuración
+requests>=2.32
+sqlalchemy>=2.0
+typer>=0.12
+python-dotenv>=1.0
+pydantic-settings>=2.4
+psutil>=6.0
+pyyaml>=6.0

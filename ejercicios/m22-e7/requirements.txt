@@ -1,0 +1,1 @@
+# La aplicación solo usa la biblioteca estándar. En tu pipeline real, aquí iría el bloqueo.

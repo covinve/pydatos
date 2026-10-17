@@ -1,0 +1,148 @@
+{
+  "descripcion": "Resultados correctos de este conjunto de datos. Úsalos para comprobar tus programas.",
+  "tamano": "4000filas",
+  "semilla": 2026,
+  "periodo": "202609",
+  "generado": "2026-10-16",
+  "archivos": [
+    "cdr.csv",
+    "cdr_ancho_fijo.txt",
+    "clientes.csv",
+    "facturas.csv",
+    "planes.csv"
+  ],
+  "clientes": {
+    "total": 40,
+    "activos": 38,
+    "por_segmento": {
+      "EMPRESARIAL": 3,
+      "RESIDENCIAL": 37
+    },
+    "por_plan": {
+      "BAS10": 7,
+      "EMP100": 2,
+      "EMP300": 1,
+      "HOG30": 9,
+      "HOG60": 16,
+      "ILIM": 5
+    }
+  },
+  "cdr": {
+    "registros_totales": 4064,
+    "registros_validos": 3933,
+    "errores": {
+      "duplicado": 64,
+      "duracion_negativa": 5,
+      "fecha_invalida": 19,
+      "linea_vacia": 15,
+      "linea_desconocida": 17,
+      "tipo_desconocido": 11
+    },
+    "validos_por_tipo": {
+      "VOZ": 1184,
+      "SMS": 181,
+      "DATOS": 2568
+    },
+    "minutos_nacionales": 2772,
+    "minutos_internacionales": 74,
+    "mb_totales": 141698.624,
+    "sms_totales": 181,
+    "lineas_con_consumo": 38,
+    "validos_por_dia": {
+      "2026-09-01": 132,
+      "2026-09-02": 132,
+      "2026-09-03": 140,
+      "2026-09-04": 119,
+      "2026-09-05": 143,
+      "2026-09-06": 114,
+      "2026-09-07": 135,
+      "2026-09-08": 134,
+      "2026-09-09": 133,
+      "2026-09-10": 148,
+      "2026-09-11": 121,
+      "2026-09-12": 128,
+      "2026-09-13": 123,
+      "2026-09-14": 141,
+      "2026-09-15": 141,
+      "2026-09-16": 134,
+      "2026-09-17": 114,
+      "2026-09-18": 144,
+      "2026-09-19": 128,
+      "2026-09-20": 132,
+      "2026-09-21": 120,
+      "2026-09-22": 155,
+      "2026-09-23": 127,
+      "2026-09-24": 130,
+      "2026-09-25": 118,
+      "2026-09-26": 112,
+      "2026-09-27": 142,
+      "2026-09-28": 136,
+      "2026-09-29": 120,
+      "2026-09-30": 137
+    },
+    "llamadas_por_hora": {
+      "00": 16,
+      "01": 21,
+      "02": 15,
+      "03": 12,
+      "04": 16,
+      "05": 14,
+      "06": 42,
+      "07": 46,
+      "08": 95,
+      "09": 81,
+      "10": 72,
+      "11": 88,
+      "12": 83,
+      "13": 100,
+      "14": 49,
+      "15": 50,
+      "16": 51,
+      "17": 40,
+      "18": 56,
+      "19": 52,
+      "20": 48,
+      "21": 51,
+      "22": 41,
+      "23": 45
+    },
+    "top5_lineas_mb": [
+      {
+        "linea": 3455411030,
+        "cliente_id": "CL0000017",
+        "mb": 12698.465
+      },
+      {
+        "linea": 3063438037,
+        "cliente_id": "CL0000022",
+        "mb": 8120.836
+      },
+      {
+        "linea": 3351466189,
+        "cliente_id": "CL0000031",
+        "mb": 7322.963
+      },
+      {
+        "linea": 3112701503,
+        "cliente_id": "CL0000027",
+        "mb": 6391.093
+      },
+      {
+        "linea": 3163561908,
+        "cliente_id": "CL0000001",
+        "mb": 5997.695
+      }
+    ]
+  },
+  "facturacion": {
+    "facturas": 40,
+    "total_facturado": 2646786,
+    "total_correcto": 2647128,
+    "facturas_con_diferencia_consumo": 1,
+    "facturas_inconsistentes": 1,
+    "facturas_total_distinto": 2,
+    "diferencia_total": -342,
+    "diferencia_por_consumo": -2142,
+    "iva_correcto": 422652
+  }
+}

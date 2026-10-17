@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PyDatos · Python para ciencia de datos</title>
+  <meta name="description" content="Curso personal de Python, de cero a avanzado, orientado a ciencia de datos con datos de facturación telco.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐍</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+  <link rel="stylesheet" href="assets/css/estilos.css?v=2026-10-17b">
+</head>
+<body>
+  <header class="barra-superior">
+    <button type="button" class="boton-icono solo-movil" id="boton-menu" aria-label="Abrir menú">☰</button>
+    <a class="marca" href="#/">
+      <span class="marca-logo">🐍</span>
+      <span class="marca-texto"><b>PyDatos</b><small>Python para ciencia de datos · Edición telco</small></span>
+    </a>
+    <span class="espaciador"></span>
+    <span class="estado-python" id="estado-python" data-estado="apagado" title="Python se cargará al usarlo"><span class="punto"></span><span class="solo-ancho">Python</span></span>
+    <span class="racha" id="racha"></span>
+    <button type="button" class="boton-icono" id="boton-progreso" title="Guardar o cargar tu progreso" aria-label="Progreso">💾</button>
+    <button type="button" class="boton-icono" id="boton-tema" aria-label="Cambiar tema">🌗</button>
+  </header>
+
+  <div class="disposicion">
+    <nav class="menu-lateral" id="menu" aria-label="Contenido del curso"></nav>
+    <div class="velo" id="velo"></div>
+    <main class="vista" id="vista">
+      <div class="cargando-curso"><div class="girador"></div>Cargando el curso…</div>
+    </main>
+  </div>
+
+  <dialog class="dialogo" id="dialogo-progreso">
+    <h2>💾 Tu progreso</h2>
+    <p>El progreso se guarda automáticamente en este navegador. Para continuar en otro computador (casa ↔ oficina):</p>
+    <ol>
+      <li><b>Exporta</b> el archivo <code>progreso-pydatos.json</code> y guárdalo en la carpeta <code>.progreso/</code> del curso.</li>
+      <li>Haz <code>git commit</code> y <code>git push</code>.</li>
+      <li>En el otro computador haz <code>git pull</code> e <b>impórtalo</b> aquí.</li>
+    </ol>
+    <p class="texto-suave">Al importar se combinan ambos progresos: se conserva lo más avanzado de cada ejercicio.</p>
+    <div class="dialogo-acciones">
+      <button type="button" class="boton boton-primario" id="exportar">⬇ Exportar progreso</button>
+      <label class="boton">⬆ Importar progreso<input type="file" id="importar" accept="application/json,.json" hidden></label>
+    </div>
+    <p class="texto-suave" id="dialogo-progreso-info"></p>
+    <div class="dialogo-pie">
+      <button type="button" class="boton boton-fantasma boton-peligro" id="borrar">Borrar todo el progreso</button>
+      <button type="button" class="boton" id="cerrar-dialogo">Cerrar</button>
+    </div>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dockerfile.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/powershell.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
+  <script src="assets/js/python.js?v=2026-10-17b"></script>
+  <script src="assets/js/markdown.js?v=2026-10-17b"></script>
+  <script src="assets/js/progreso.js?v=2026-10-17b"></script>
+  <script src="assets/js/app.js?v=2026-10-17b"></script>
+</body>
+</html>

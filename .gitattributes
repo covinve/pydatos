@@ -1,0 +1,10 @@
+# Saltos de línea LF en todos los computadores (Windows incluido): las pruebas comparan archivos byte a byte
+# y los CDR de ancho fijo miden exactamente 92 bytes por registro.
+* text=auto eol=lf
+
+# Datos: se guardan tal cual, sin ninguna conversión
+*.csv -text
+*.txt -text
+*.parquet binary
+*.png binary
+*.db binary

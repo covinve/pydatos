@@ -1,0 +1,35 @@
+# Entorno virtual
+.venv/
+venv/
+
+# Datos generados (pueden pesar varios GB): se regeneran con herramientas/generar_datos.py
+/datos/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# Configuración local y secretos
+.env
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Reportes generados por tus programas
+/reportes/
+
+# Resultados de los programas del curso
+/salidas/
+salidas/
+*.parquet
+!contenido/datos/**/*.parquet
+
+# Configuración local del editor y de herramientas
+.claude/
